@@ -1,0 +1,36 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{CABD7AB3-DD7D-4F8D-917B-874C71036E14}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="MineSweeper.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="MineSweeper">
+        <MSBuild Projects="MineSweeper.dproj"/>
+    </Target>
+    <Target Name="MineSweeper:Clean">
+        <MSBuild Projects="MineSweeper.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="MineSweeper:Make">
+        <MSBuild Projects="MineSweeper.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="MineSweeper"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="MineSweeper:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="MineSweeper:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

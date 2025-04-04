@@ -7,11 +7,12 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs;
 
 const WM_AFTER_SHOW = WM_USER + 1;
-
 type
   TFormEffectStart = class(TForm)
     procedure FormShow(Sender: TObject);
-    private procedure WMAfterShow(var Msg: TMessage); message WM_AFTER_SHOW;
+  private
+    procedure WMAfterShow(var Msg: TMessage); message WM_AFTER_SHOW;
+  public
   end;
 
 var

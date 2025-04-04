@@ -6,17 +6,12 @@ uses
   Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids,
   Vcl.Samples.Spin, Vcl.MPlayer, Vcl.Imaging.pngimage, System.Types,
-  System.ImageList, Vcl.ImgList;
-
-type TLevel = ( Easy, Medium, Hard);
-type TImageBoard = ( Bomb, Flag);
-
+  System.ImageList, Vcl.ImgList, Game.Types;
 type
   TFormGame = class(TForm)
     GameGrid: TStringGrid;
     PanelOptions: TPanel;
     TimerLabel: TLabel;
-    GameTimer: TTimer;
     ImageFlag: TImage;
     ImageClock: TImage;
     ImageClose: TImage;
@@ -25,6 +20,11 @@ type
     ImageSoundOn: TImage;
     ImageSoundOff: TImage;
     ComboBoxLevel: TComboBox;
+    PanelTips: TPanel;
+    ImageTipDig: TImage;
+    ImageTipFlag: TImage;
+    GameTimer: TTimer;
+    TipsTimer: TTimer;
     procedure GameTimerTimer(Sender: TObject);
     procedure GameGridDrawCell(Sender: TObject; ACol, ARow: LongInt; Rect: TRect; State: TGridDrawState);
     procedure GameGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -34,6 +34,9 @@ type
     procedure ComboBoxLevelChange(Sender: TObject);
     procedure ImageSoundOnClick(Sender: TObject);
     procedure ImageSoundOffClick(Sender: TObject);
+    procedure ImageShareClick(Sender: TObject);
+    procedure TipsTimerTimer(Sender: TObject);
+    procedure PanelTipsClick(Sender: TObject);
   private
     Board: array of array of Integer;
     Revealed: array of array of Boolean;
@@ -47,14 +50,14 @@ type
     BombImage: TPngImage;
     FlagImage: TPngImage;
     Rgn: HRGN;
-    procedure InitializeBoard;
+    procedure BorderRadiusEffect;
     procedure CalculateAdjacentNumbers;
     procedure CheckWinCondition;
     procedure CreateImages;
-    procedure CreateBordEffect;
     procedure EndGame(const Lost: Boolean);
     procedure FloodFill(X, Y: Integer);
-    procedure NewGame(level: Tlevel);
+    procedure InitializeBoard;
+    procedure NewGame(level: TLevel);
     procedure PlaceMines;
     procedure PlaySoundGameOver;
     procedure PlaySoundExplosion;
@@ -64,15 +67,16 @@ type
     procedure RevealedMines;
     procedure SetDifficulty(level: Tlevel);
     procedure SetSoundActive(const Value: boolean);
+    procedure ShakeWindow;
+    procedure Share;
     procedure RevealCell(X, Y: Integer);
     procedure UpdateLabelFlag(const CountFlag: Integer);
-
     function GetDifficulty: Tlevel;
     function GetImage(const Image: TImageBoard) : TPngImage;
     function GetSoundActive: boolean;
   public
     property SoundActive: boolean read GetSoundActive write SetSoundActive;
-    property Difficulty: Tlevel read GetDifficulty write SetDifficulty;
+    property Difficulty: TLevel read GetDifficulty write SetDifficulty;
   end;
 
 var  FormGame: TFormGame;
@@ -81,14 +85,15 @@ implementation
 
 {$R *.dfm}
 
-{ TFormGame }
+uses View.Result, View.Effect, View.Share, Sound.Game;
 
-uses View.Result, Sound.Game;
-
+/// Engine Game
 procedure TFormGame.FormCreate(Sender: TObject);
 begin
   CreateImages;
-  CreateBordEffect;
+  BorderRadiusEffect;
+  SetDifficulty(Easy);
+  SetSoundActive(True);
   NewGame(Easy);
 end;
 
@@ -102,7 +107,7 @@ begin
   Action := caFree;
 end;
 
-procedure TFormGame.NewGame(level: Tlevel);
+procedure TFormGame.NewGame(level: TLevel);
 begin
   case level of
     Easy: UpdateLabelFlag(10);
@@ -144,6 +149,7 @@ begin
     begin
       GameTimer.Enabled := False;
       PlaySoundExplosion;
+      ShakeWindow;
       RevealedMines;
       PlaySoundGameOver;
       Formresult.SetTime(TimerCount);
@@ -155,6 +161,7 @@ begin
       PlaySoundWinner;
       Formresult.SetTime(TimerCount);
       Formresult.SetResultGame(ResultGame.Winner);
+      Formresult.SetDifficulty(TLevel(Ord(ComboBoxLevel.ItemIndex)));
       Formresult.SetSoundActive(GetSoundActive);
       Formresult.ShowModal;
     end;
@@ -174,7 +181,7 @@ begin
     Formresult.Close;
     Formresult.Free;
     PlaySoundOff;
-    NewGame(TLevel(ComboBoxLevel.ItemIndex));
+    NewGame(Game.types.TLevel(ComboBoxLevel.ItemIndex));
   end;
 end;
 
@@ -227,32 +234,31 @@ begin
         end;
         TextOut(Rect.Left + 10, Rect.Top + 5, IntToStr(Board[ACol, ARow]));
       end;
-    end
-    else if Flagged[ACol, ARow] then
+    end else
+    if Flagged[ACol, ARow] then
       Draw(Rect.Left + 5, Rect.Top + 5, GetImage(Flag)); // Draw the help flag
   end;
 end;
 
 procedure TFormGame.GameGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  PlayClickSound;
   var Col, Row: Integer;
+  PlayClickSound;
+  GameTimer.Enabled:= True;
   if GameOver then Exit;
   GameGrid.MouseToCell(X, Y, Col, Row);
-  if Button = mbLeft then
-  begin
-    RevealCell(Col, Row);
-    if not GameTimer.Enabled then
-      GameTimer.Enabled:= True;
-  end
-  else if Button = mbRight then
-    Flagged[Col, Row] := not Flagged[Col, Row];
+
+  case Button of
+    TMouseButton.mbLeft: RevealCell(Col, Row);
+    TMouseButton.mbRight: Flagged[Col, Row] := not Flagged[Col, Row];
+    TMouseButton.mbMiddle: ;
+  end;
 
   GameGrid.Invalidate;
   CheckWinCondition;
 end;
 
-function TFormGame.GetDifficulty: Tlevel;
+function TFormGame.GetDifficulty: Game.types.TLevel;
 begin
   result:= FDifficulty;
 end;
@@ -267,12 +273,19 @@ begin
       Flagged[x, y] := False;
     end;
 
+  GameTimer.Enabled := False;
   GameOver := False;
   TimerCount := 0;
   TimerLabel.Caption := '0';
 
   PlaceMines;
   CalculateAdjacentNumbers;
+end;
+
+procedure TFormGame.PanelTipsClick(Sender: TObject);
+begin
+  PanelTips.Visible:= False;
+  TipsTimer.Enabled:= False;
 end;
 
 procedure TFormGame.PlaceMines;
@@ -305,6 +318,19 @@ begin
     var x := Positions[i].X;
     var y := Positions[i].Y;
     Board[x, y] := -1;
+  end;
+end;
+
+procedure TFormGame.BorderRadiusEffect;
+begin
+  Rgn := CreateRoundRectRgn(0, 0, Width, Height, 30, 30);
+  SetWindowRgn(Handle, Rgn, True);
+
+  with ComboBoxLevel do
+  begin
+    var R := ClientRect;
+    Rgn := CreateRoundRectRgn(R.Left, R.Top, R.Right, R.Bottom, 10, 10);
+    SetWindowRgn(Handle, Rgn, True);
   end;
 end;
 
@@ -365,14 +391,14 @@ begin
   sleep(2000);
 end;
 
-procedure TFormGame.SetDifficulty(Level: TLevel);
+procedure TFormGame.SetDifficulty(Level: Game.types.TLevel);
 begin
   FDifficulty:= level;
 end;
 
 procedure TFormGame.ComboBoxLevelChange(Sender: TObject);
 begin
-  SetDifficulty(TLevel(ComboBoxLevel.ItemIndex));
+  SetDifficulty(Game.types.TLevel(ComboBoxLevel.ItemIndex));
 end;
 
 /// Screen Controls
@@ -388,24 +414,6 @@ begin
     TimerLabel.Caption := Format('%d', [TimerCount]);
   except
     GameTimer.Enabled:= False;
-  end;
-end;
-
-procedure TFormGame.CreateBordEffect;
-var
-  R : TRect;
-begin
-  Rgn := CreateRoundRectRgn(0, 0, Width, Height, 30, 30);
-  SetWindowRgn(Handle, Rgn, True);
-
-  SetDifficulty(Easy);
-  SetSoundActive(True);
-
-  with ComboBoxLevel do
-  begin
-    R := ClientRect;
-    Rgn := CreateRoundRectRgn(R.Left, R.Top, R.Right, R.Bottom, 10, 10);
-    SetWindowRgn(Handle, Rgn, True);
   end;
 end;
 
@@ -444,10 +452,55 @@ begin
   FSoundActive:= value;
 end;
 
+procedure TFormGame.ShakeWindow;
+begin
+  var OriginalLeft := Self.Left;
+  var OriginalTop := Self.Top;
+
+  for var i := 1 to 10 do
+  begin
+    Self.Left := OriginalLeft + Random(10) - 5;
+    Self.Top := OriginalTop + Random(10) - 5;
+    Sleep(30);
+    Application.ProcessMessages;
+  end;
+  Self.Left := OriginalLeft;
+  Self.Top := OriginalTop;
+end;
+
+procedure TFormGame.Share;
+begin
+  TFormEffectStart.Execute(Application, TFormShare);
+end;
+
+procedure TFormGame.TipsTimerTimer(Sender: TObject);
+begin
+  try
+    if ImageTipDig.Visible then
+    begin
+      ImageTipDig.Visible:= false;
+      Sleep(2000);
+      ImageTipFlag.Visible:= True;
+    end else
+    //if ImageTipFlag.Visible then
+    begin
+      ImageTipFlag.Visible:= false;
+      Sleep(2000);
+      ImageTipDig.Visible:= True;
+    end;
+  except
+    TipsTimer.Enabled:= False;
+  end;
+end;
+
+procedure TFormGame.ImageShareClick(Sender: TObject);
+begin
+  Share;
+end;
+
 procedure TFormGame.ImageSoundOffClick(Sender: TObject);
 begin
   SetSoundActive(True);
-  PlaySoundGameOver;
   ImageSoundON.visible:= True;
   ImageSoundOff.visible:= False;
 end;
