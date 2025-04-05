@@ -66,19 +66,18 @@ end;
 begin
   ReportMemoryLeaksOnShutdown:=True;
   Application.Initialize;
-  Application.MainFormOnTaskbar := True;
   FormSplash := TFormSplash.Create(nil);
   FormSplash.Show;
   BorderRadiusEffect;
   EffectDownBomb;
   FormSplash.PanelCloud.Color:= clRed;
   FormSplash.Repaint;
-  FormSplash.Update; // força a renderização
+  FormSplash.Update;
   ShakeWindow;
   FormSplash.Close;
   DeleteObject(Rgn);
   FormSplash.Free;
-  TPlaySoundGame.VerifyFilesWav; // Files exists in folder
+  TPlaySoundGame.VerifyFilesWav;
   TFormEffectStart.Execute(Application, TFormGame);
   Application.Run;
 end.
