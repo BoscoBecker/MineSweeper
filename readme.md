@@ -1,4 +1,4 @@
-# 🧨 Mine Sweeper - Delphi VCL
+# 🧨 Mine Sweeper - Delphi VCL Game
 
 This is a simple clone of the classic **Mine Sweeper** game, built using **Delphi VCL**. The goal is to reveal all cells that do not contain mines by using logic and deduction.
 
