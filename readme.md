@@ -8,9 +8,9 @@ This is a simple clone of the classic **Mine Sweeper** game, built using **Delph
 ## 🛠️ Technologies
 
 - **Delphi VCL**
-- Object-Oriented Programming (OOP)
 - Native Delphi components (TButton, TPanel, TLabel, etc.)
 - SQlite
+- SKIA
 
 ## 🎮 How to Play
 
