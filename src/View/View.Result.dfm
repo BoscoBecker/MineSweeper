@@ -18,7 +18,7 @@ object FormResult: TFormResult
   OnShow = FormShow
   TextHeight = 15
   object ImageTryAgain: TImage
-    Left = 293
+    Left = 274
     Top = 333
     Width = 193
     Height = 76
@@ -56,7 +56,7 @@ object FormResult: TFormResult
     OnClick = ImageTryAgainClick
   end
   object ImageBack: TImage
-    Left = 388
+    Left = 369
     Top = 359
     Width = 41
     Height = 28
@@ -106,7 +106,7 @@ object FormResult: TFormResult
     ParentFont = False
   end
   object LabelTryAgain: TLabel
-    Left = 310
+    Left = 291
     Top = 361
     Width = 72
     Height = 17
@@ -121,7 +121,7 @@ object FormResult: TFormResult
     OnClick = ImageTryAgainClick
   end
   object ImageYourName: TImage
-    Left = 81
+    Left = 62
     Top = 333
     Width = 193
     Height = 76
@@ -159,7 +159,7 @@ object FormResult: TFormResult
     OnClick = ImageTryAgainClick
   end
   object LabelInfoName: TLabel
-    Left = 83
+    Left = 64
     Top = 361
     Width = 32
     Height = 17
@@ -172,10 +172,12 @@ object FormResult: TFormResult
     ParentFont = False
   end
   object LabelYourName: TLabel
-    Left = 245
-    Top = 292
-    Width = 10
+    Left = 152
+    Top = 306
+    Width = 258
     Height = 21
+    Alignment = taCenter
+    AutoSize = False
     Caption = ' '
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWhite
@@ -36390,7 +36392,7 @@ object FormResult: TFormResult
       7D}
   end
   object EditPlayerName: TEdit
-    Left = 119
+    Left = 100
     Top = 359
     Width = 149
     Height = 23
