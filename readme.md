@@ -14,6 +14,8 @@ This is a simple clone of the classic **Mine Sweeper** game based in google Mine
 
 ## 🎮 How to Play
 
+Extract the zip : Win32\Release\MineSweeper.exe or Win64\Release\MineSweeper.exe  
+
 1. Open the project in **Delphi** (recommended: Delphi 11 or higher).
 2. Compile and run the project.
 3. Left-click to reveal a cell.
